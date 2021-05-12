@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 type Article struct {
@@ -14,20 +16,31 @@ type Article struct {
 }
 type Articles []Article
 
+var articles = Articles{
+	Article{Title: "test", Desc: "test description", Content: "hello world"},
+}
+
 func allArticles(rw http.ResponseWriter, r *http.Request) {
-	articles := Articles{
-		Article{Title: "test", Desc: "test description", Content: "hello world"},
-	}
-	fmt.Printf("Endpoint Hit: All Articles Endpoint")
+
+	fmt.Printf("Endpoint Hit: All Articles Endpoint\n")
 	_ = json.NewEncoder(rw).Encode(articles)
 }
+func testPostArticle(rw http.ResponseWriter, r *http.Request) {
+	newArticle := Article{Title: "second", Desc: "test description", Content: "woohhooooooo"}
+	articles = append(articles, newArticle)
+	fmt.Fprintf(rw, "Artcle Added")
+}
 func homePage(rw http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(rw, "Homepage Endpoint Hit")
+	fmt.Fprintf(rw, "Homepage Endpoint Hit\n")
 }
 func handleRequest() {
-	http.HandleFunc("/", homePage)
-	http.HandleFunc("/articles", allArticles)
-	log.Fatal(http.ListenAndServe(":9090", nil))
+	myRouter := mux.NewRouter().StrictSlash(true)
+	myRouter.HandleFunc("/", homePage)
+	myRouter.HandleFunc("/articles", allArticles).Methods("GET")
+	myRouter.HandleFunc("/articles", testPostArticle).Methods("POST")
+
+	log.Fatal(http.ListenAndServe(":9090", myRouter))
+
 }
 func main() {
 	handleRequest()
